@@ -26,7 +26,7 @@ constexpr uint8_t MAX_FRAME_QUEUE = 9;
 constexpr int MIN_CYCLES_PERCENT = 33; // valid range: 1% to 100%
 
 #include <chrono>
-#include <mutex>
+#include <atomic>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -165,12 +165,10 @@ static constexpr auto frame_pace_ms = static_cast<uint32_t>(frame_pace_us.count(
 static constexpr auto max_latency_ms = static_cast<uint32_t>(frame_pace_us.count()) *
                                        MAX_FRAME_QUEUE / 1000;
 
-static int frame_balance = 0;
-static int pic_balance = 0;
+static std::atomic<int> frame_balance = {};
+static std::atomic<int> pic_balance = {};
 static std::thread pic_pacer;
 static std::thread frame_pacer;
-static std::mutex pic_balance_mutex;
-static std::mutex frame_balance_mutex;
 
 static std::vector<int32_t> cycle_range;
 const std::vector<int32_t> generate_cycle_range(const int32_t max_cycles,
@@ -238,7 +236,6 @@ static void pace_pic()
 {
 	while (true) {
 		std::this_thread::sleep_for(msT(1));
-		std::lock_guard<std::mutex> guard(pic_balance_mutex);
 		pic_balance++;
 	}
 }
@@ -247,7 +244,6 @@ static void pace_frame()
 {
 	while (true) {
 		std::this_thread::sleep_for(frame_pace_us);
-		std::lock_guard<std::mutex> guard(frame_balance_mutex);
 		frame_balance++;
 	}
 }
@@ -267,10 +263,9 @@ static Bitu Normal_Loop(void)
 #if C_DEBUG
 			if (DEBUG_ExitLoop()) return 0;
 #endif
-			if (frame_balance) {
+			if (frame_balance.load()) {
 				if (!GFX_Events())
 					return 0;
-				std::lock_guard<std::mutex> guard(frame_balance_mutex);
 				frame_balance = 0;
 			}
 
@@ -303,9 +298,8 @@ void increaseticks_fixed()
 		}
 		return;
 	}
-	while (pic_balance < 1)
+	while (pic_balance.load() < 1)
 		std::this_thread::sleep_for(usT(50));
-	std::lock_guard<std::mutex> guard(pic_balance_mutex);
 	pic_balance = 0;
 }
 
