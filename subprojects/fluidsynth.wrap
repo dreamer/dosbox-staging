@@ -1,0 +1,13 @@
+[wrap-file]
+directory = fluidsynth-2.1.7
+
+source_url = https://github.com/FluidSynth/fluidsynth/archive/v2.1.7.tar.gz
+source_filename = fluidsynth-2.1.7.tar.gz
+source_hash = 365a1c0982efcaff724a7b05d26ce1db76bc7435aa4c239df61cbc87f04b6c90
+
+patch_url = https://github.com/dosbox-staging/dosbox-staging.github.io/releases/download/artifacts/fluidsynth-2.1.7-1-wrap.zip
+patch_filename = fluidsynth-2.1.7-1-wrap.zip
+patch_hash = 212cc6cd9bfe63969f03f1188e5674bc938bd58b315e079fbd39fc51d0b1171d
+
+[provide]
+fluidsynth = fluidsynth_dep
